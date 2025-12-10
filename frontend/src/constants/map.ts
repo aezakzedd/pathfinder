@@ -7,7 +7,7 @@ export const MAP_CONFIG = {
   DEFAULT_CENTER: [124.25, 13.75] as [number, number], // Center of Catanduanes island
   DEFAULT_PITCH: 60,
   DEFAULT_BEARING: 0,
-  MIN_ZOOM: 10,
+  MIN_ZOOM: 9,
   MAX_ZOOM: 22,
   MODEL_CLICK_THRESHOLD: 0.001, // degrees (roughly 100m)
   TERRAIN_EXAGGERATION: 1,

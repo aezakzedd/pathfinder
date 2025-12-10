@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Model3DConfig } from '../types/model'
-import { ANIMATION_CONFIG } from '../constants/map'
+import { ANIMATION_CONFIG, MODEL_CONFIG } from '../constants/map'
 
 /**
  * Offset coordinates by meters (north/south and east/west)
@@ -158,10 +158,21 @@ export function useMap3DMarkers(
       // Add click handler
       container.addEventListener('click', () => {
         onMarkerClick(model.id)
+        // Fly to model with proper camera angle to see the 3D model
+        // Adjust zoom based on model scale and altitude for optimal visibility
+        // Larger scale/altitude = lower zoom to fit the model in view
+        const modelScale = model.scale ?? MODEL_CONFIG.DEFAULT_SCALE
+        const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
+        const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
+        const altitudeAdjustment = modelAltitude > 20 ? 0.3 : 0
+        const targetZoom = Math.max(17.5, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
         map.flyTo({
           center: model.coordinates,
-          zoom: ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT,
-          duration: 1000
+          zoom: targetZoom,
+          pitch: 65, // Tilted view to see 3D model better
+          bearing: map.getBearing(), // Keep current bearing
+          duration: 1500,
+          essential: true // Animation is essential, don't skip if low performance
         })
       })
 

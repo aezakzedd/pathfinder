@@ -13,7 +13,11 @@ import { calculateDistanceDegrees } from '../utils/coordinates'
 import PerformanceModeToggle from '../components/PerformanceModeToggle'
 import toast from 'react-hot-toast'
 
-export default function Discover() {
+interface DiscoverProps {
+  isSidebarOpen?: boolean
+}
+
+export default function Discover({ isSidebarOpen = false }: DiscoverProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
@@ -67,7 +71,6 @@ export default function Discover() {
       
       // Add map controls
       mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right')
-      mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left')
 
       // Handle map errors
       mapInstance.on('error', (e) => {
@@ -134,11 +137,20 @@ export default function Discover() {
             // If click is within threshold distance, consider it a hit
             if (distance < MAP_CONFIG.MODEL_CLICK_THRESHOLD && mapInstance) {
               setSelectedTouristSpot(model.id)
-              // Fly to the model location
+              // Fly to the model location with proper camera angle to see the 3D model
+              // Adjust zoom based on model scale and altitude for optimal visibility
+              const modelScale = model.scale ?? MODEL_CONFIG.DEFAULT_SCALE
+              const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
+              const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
+              const altitudeAdjustment = modelAltitude > 20 ? 0.3 : 0
+              const targetZoom = Math.max(17.5, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
               mapInstance.flyTo({
                 center: model.coordinates,
-                zoom: ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT,
-                duration: 1000
+                zoom: targetZoom,
+                pitch: 65, // Tilted view to see 3D model better
+                bearing: mapInstance.getBearing(), // Keep current bearing
+                duration: 1500,
+                essential: true // Animation is essential, don't skip if low performance
               })
               break
             }
@@ -270,8 +282,28 @@ export default function Discover() {
   // Using 0 vertical offset so marker position is independent of camera zoom/angle
   useMap3DMarkers(map, touristSpotModels, setSelectedTouristSpot, [45, 25], 0)
 
+  // Resize map when container size changes (e.g., when sidebar toggles)
+  useEffect(() => {
+    if (!map || !mapContainer.current) return
+
+    const resizeObserver = new ResizeObserver(() => {
+      // Use setTimeout to ensure the DOM has fully updated
+      setTimeout(() => {
+        if (map) {
+          map.resize()
+        }
+      }, 100)
+    })
+
+    resizeObserver.observe(mapContainer.current)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [map])
+
   return (
-    <div className="fixed inset-0 w-full h-full" style={{ zIndex: 0 }}>
+    <div className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
       {/* Map container - always rendered so useEffect can access it */}
       <div 
         ref={mapContainer} 
@@ -308,7 +340,7 @@ export default function Discover() {
       <TouristSpotInfo spot={selectedSpot} onClose={handleCloseSpotInfo} />
       
       {/* Performance Mode Toggle - Controls terrain and models */}
-      <PerformanceModeToggle />
+      <PerformanceModeToggle isSidebarOpen={isSidebarOpen} />
     </div>
   )
 }

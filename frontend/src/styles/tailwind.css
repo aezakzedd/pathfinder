@@ -3,3 +3,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar for sidebar chat */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2d2d2d #1a1a1a;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a !important;
+  border-radius: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #2d2d2d !important;
+  border-radius: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a !important;
+}
+

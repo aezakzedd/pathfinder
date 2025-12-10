@@ -1,14 +1,47 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-export default function Navigation() {
+interface NavigationProps {
+  isSidebarOpen: boolean
+}
+
+export default function Navigation({ isSidebarOpen }: NavigationProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
   const isActive = (path: string) => location.pathname === path
+  const isDiscoverPage = location.pathname === '/discover'
+
+  // Detect mobile
+  const [isMobile, setIsMobile] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768
+    }
+    return false
+  })
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
-    <nav className="flex justify-center p-5 fixed top-0 left-0 right-0 z-40" role="navigation" aria-label="Main navigation" style={{ pointerEvents: 'none' }}>
+    <nav 
+      className="flex justify-center fixed left-0 z-40 transition-all duration-300" 
+      role="navigation" 
+      aria-label="Main navigation" 
+      style={{ 
+        pointerEvents: 'none',
+        right: !isMobile && isDiscoverPage && isSidebarOpen ? '30%' : '0',
+        top: isMobile ? '5px' : '10px',
+        paddingLeft: '1.25rem',
+        paddingRight: '1.25rem',
+        paddingBottom: '1.25rem'
+      }}
+    >
       <div className="flex gap-2 rounded-2xl px-3 py-2.5" style={{ pointerEvents: 'auto' }}>
         <button
           onClick={() => navigate('/')}
@@ -21,7 +54,7 @@ export default function Navigation() {
             }
           }}
           className={`
-            px-8 py-3 rounded-xl font-bold text-sm
+            py-3 rounded-xl font-bold text-sm
             transition-all duration-300 ease-out
             relative overflow-hidden group
             ${isActive('/') 
@@ -29,7 +62,12 @@ export default function Navigation() {
               : 'text-gray-800 hover:text-white bg-white hover:bg-gray-100'
             }
           `}
-          style={isActive('/') ? { backgroundColor: 'var(--seafoam-blue)' } : { backgroundColor: '#ffffff' }}
+          style={{ 
+            minWidth: '100px',
+            paddingLeft: '1.5rem',
+            paddingRight: '1.5rem',
+            backgroundColor: isActive('/') ? 'var(--seafoam-blue)' : '#ffffff'
+          }}
         >
           <span className="relative z-10 flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +87,7 @@ export default function Navigation() {
             }
           }}
           className={`
-            px-8 py-3 rounded-xl font-bold text-sm
+            py-3 rounded-xl font-bold text-sm
             transition-all duration-300 ease-out
             relative overflow-hidden group
             ${isActive('/discover') 
@@ -57,7 +95,12 @@ export default function Navigation() {
               : 'text-gray-800 hover:text-white bg-white hover:bg-gray-100'
             }
           `}
-          style={isActive('/discover') ? { backgroundColor: 'var(--seafoam-blue)' } : { backgroundColor: '#ffffff' }}
+          style={{ 
+            minWidth: '100px',
+            paddingLeft: '1.5rem',
+            paddingRight: '1.5rem',
+            backgroundColor: isActive('/discover') ? 'var(--seafoam-blue)' : '#ffffff'
+          }}
         >
           <span className="relative z-10 flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,7 +7,7 @@ import { Model3DConfig } from '../types/model'
 export const touristSpotModels: Model3DConfig[] = [
   {
     id: 'kape-tagpuan',
-    modelPath: '/1998193939030491136/light.glb',
+    modelPath: '/Bote Lighthouse/light.glb',
     coordinates: [124.32495514015112, 13.559159840888644],
     altitude: 25,
     rotation: [Math.PI / 2, 0, 0],

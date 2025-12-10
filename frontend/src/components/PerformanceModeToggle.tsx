@@ -2,12 +2,16 @@
  * Performance Mode Toggle Component
  * Simple button that toggles both 3D terrain and 3D models together
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../state/store'
 import { Settings, Box } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function PerformanceModeToggle() {
+interface PerformanceModeToggleProps {
+  isSidebarOpen?: boolean
+}
+
+export default function PerformanceModeToggle({ isSidebarOpen = false }: PerformanceModeToggleProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const {
     terrainEnabled,
@@ -33,8 +37,30 @@ export default function PerformanceModeToggle() {
     }
   }
 
+  // Detect mobile
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768
+    }
+    return false
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
-    <div className="fixed top-28 right-2.5 z-[1000]">
+    <div 
+      className="absolute z-[1000] transition-all duration-300"
+      style={{
+        top: isMobile ? '70px' : '90px', // Position just below map controls
+        right: '10px'
+      }}
+    >
       {/* Main Button - Fixed position */}
       <div className="relative">
         <button

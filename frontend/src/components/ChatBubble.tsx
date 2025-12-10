@@ -4,10 +4,12 @@ import type { ChatMessage, PlaceInfo } from '../types/api'
 
 interface ChatBubbleProps {
   onPlaceSelect?: (place: PlaceInfo) => void
+  isOpen: boolean
+  onToggle: () => void
+  isMobile?: boolean
 }
 
-export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export default function ChatBubble({ onPlaceSelect, isOpen, onToggle, isMobile = false }: ChatBubbleProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -20,6 +22,12 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const isInitialMount = useRef(true)
+
+  useEffect(() => {
+    // Mark that initial mount is complete
+    isInitialMount.current = false
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -83,7 +91,6 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
   const handlePlaceClick = (place: PlaceInfo) => {
     if (onPlaceSelect) {
       onPlaceSelect(place)
-      setIsOpen(false)
     }
   }
 
@@ -100,72 +107,374 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
     return icons[type] || '📍'
   }
 
-  return (
-    <>
-      {/* Chat Bubble Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-[9999] w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${
-          isOpen 
-            ? 'bg-gradient-to-br from-red-500 to-red-600 rotate-0' 
-            : 'bg-gradient-to-br from-primary to-teal-600 animate-pulse'
-        }`}
-        style={{ 
-          boxShadow: isOpen 
-            ? '0 8px 32px rgba(239, 68, 68, 0.4)' 
-            : '0 8px 32px rgba(44, 183, 180, 0.5)'
-        }}
-        aria-label={isOpen ? 'Close chat' : 'Open chat'}
-      >
-        {isOpen ? (
-          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+  // Mobile: bottom sheet, Desktop: right sidebar
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Bottom Sheet */}
+        <div
+          className={`fixed left-0 right-0 z-[9998] ${
+            isInitialMount.current ? '' : 'transition-all duration-300 ease-in-out'
+          }`}
+          style={{
+            bottom: isOpen ? '0' : '-100%',
+            height: isOpen ? '60%' : '0%',
+            backgroundColor: '#1a1a1a',
+            borderTop: isOpen ? '1px solid #2d2d2d' : 'none',
+            borderTopLeftRadius: isOpen ? '1rem' : '0',
+            borderTopRightRadius: isOpen ? '1rem' : '0',
+            boxShadow: isOpen ? '0 -4px 12px rgba(0, 0, 0, 0.3)' : 'none',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Drag Handle */}
+          {isOpen && (
+            <div className="w-full flex justify-center py-2 cursor-grab active:cursor-grabbing" onClick={onToggle}>
+              <div className="w-12 h-1 bg-[#2d2d2d] rounded-full"></div>
+            </div>
+          )}
+          
+          {/* Sidebar Content */}
+          <div className={`h-full flex flex-col ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} style={{ height: isOpen ? 'calc(100% - 24px)' : '0' }}>
+            {/* Header */}
+            <div 
+              className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+              style={{
+                backgroundColor: '#1f1f1f',
+                borderBottom: '1px solid #2d2d2d'
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: '#2d2d2d' }}
+                >
+                  <span className="text-lg">🧭</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm" style={{ color: '#e5e5e5' }}>Chat</h3>
+                  <p className="text-xs" style={{ color: '#888888' }}>Pathfinder AI</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onToggle}
+                  className="p-1.5 rounded transition-colors"
+                  style={{ 
+                    color: '#888888',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                    e.currentTarget.style.color = '#e5e5e5'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                    e.currentTarget.style.color = '#888888'
+                  }}
+                  aria-label="Close sidebar"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Messages - reuse the same component structure */}
+            <div 
+              className="flex-1 overflow-y-auto p-4 space-y-4 sidebar-scrollbar"
+              style={{ backgroundColor: '#1a1a1a' }}
+            >
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-lg px-3 py-2.5 ${
+                      message.role === 'user' ? 'ml-auto' : ''
+                    }`}
+                    style={
+                      message.role === 'user'
+                        ? {
+                            backgroundColor: '#3a3a3a',
+                            color: '#e5e5e5'
+                          }
+                        : {
+                            backgroundColor: '#252525',
+                            color: '#e5e5e5',
+                            border: '1px solid #2d2d2d'
+                          }
+                    }
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Places */}
+                    {message.places && message.places.length > 0 && (
+                      <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid #2d2d2d' }}>
+                        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#888888' }}>
+                          📍 Related Places
+                        </p>
+                        {message.places.map((place, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handlePlaceClick(place)}
+                            className="w-full text-left p-2 rounded-lg transition-colors flex items-center gap-2 group"
+                            style={{
+                              backgroundColor: '#1f1f1f',
+                              border: '1px solid #2d2d2d'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#252525'
+                              e.currentTarget.style.borderColor = '#3a3a3a'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#1f1f1f'
+                              e.currentTarget.style.borderColor = '#2d2d2d'
+                            }}
+                          >
+                            <span className="text-base">{getPlaceIcon(place.type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <p 
+                                className="text-sm font-medium truncate transition-colors"
+                                style={{ color: '#e5e5e5' }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = '#e5e5e5'}
+                              >
+                                {place.name}
+                              </p>
+                              <p className="text-xs capitalize" style={{ color: '#888888' }}>{place.type}</p>
+                            </div>
+                            <svg 
+                              className="w-4 h-4 transition-colors flex-shrink-0" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                              style={{ color: '#888888' }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#b0b0b0'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#888888'}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p 
+                      className="text-xs mt-1.5"
+                      style={{ 
+                        color: message.role === 'user' ? 'rgba(229, 229, 229, 0.6)' : '#888888'
+                      }}
+                    >
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div 
+                    className="rounded-lg px-3 py-2.5"
+                    style={{
+                      backgroundColor: '#252525',
+                      color: '#e5e5e5',
+                      border: '1px solid #2d2d2d'
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '300ms' }}></span>
+                      </div>
+                      <span className="text-sm" style={{ color: '#888888' }}>Pathfinder is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <form 
+              onSubmit={handleSubmit} 
+              className="p-3 flex-shrink-0"
+              style={{
+                backgroundColor: '#1f1f1f',
+                borderTop: '1px solid #2d2d2d'
+              }}
+            >
+              <div 
+                className="flex items-center gap-2 rounded-lg px-3 py-2"
+                style={{
+                  backgroundColor: '#252525',
+                  border: '1px solid #2d2d2d'
+                }}
+              >
+                <button
+                  type="button"
+                  className="p-1 rounded transition-colors"
+                  style={{ color: '#888888' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                    e.currentTarget.style.color = '#e5e5e5'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                    e.currentTarget.style.color = '#888888'
+                  }}
+                  aria-label="Attach"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about Catanduanes..."
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  style={{
+                    color: '#e5e5e5'
+                  }}
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className="p-1.5 rounded transition-colors"
+                  style={
+                    input.trim() && !isLoading
+                      ? {
+                          backgroundColor: '#3a3a3a',
+                          color: '#e5e5e5'
+                        }
+                      : {
+                          color: '#555555',
+                          cursor: 'not-allowed'
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (input.trim() && !isLoading) {
+                      e.currentTarget.style.backgroundColor = '#444444'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (input.trim() && !isLoading) {
+                      e.currentTarget.style.backgroundColor = '#3a3a3a'
+                    }
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Mobile: Floating button to open bottom sheet */}
+        {!isOpen && (
+          <button
+            onClick={onToggle}
+            className="fixed bottom-6 right-6 z-[9999] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110"
+            style={{
+              backgroundColor: '#3a3a3a',
+              color: '#e5e5e5'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#444444'
+              e.currentTarget.style.opacity = '1'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#3a3a3a'
+              e.currentTarget.style.opacity = '1'
+            }}
+            aria-label="Open Pathfinder AI chat"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </button>
         )}
-      </button>
+      </>
+    )
+  }
 
-      {/* Notification Badge */}
-      {!isOpen && (
-        <span className="fixed bottom-[76px] right-6 z-[10000] bg-accent text-white text-xs font-bold px-2 py-1 rounded-full animate-bounce">
-          Ask me!
-        </span>
-      )}
-
-      {/* Chat Window */}
-      <div
-        className={`fixed bottom-24 right-6 z-[9998] w-[380px] max-w-[calc(100vw-48px)] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 transform origin-bottom-right ${
-          isOpen 
-            ? 'scale-100 opacity-100 pointer-events-auto' 
-            : 'scale-0 opacity-0 pointer-events-none'
-        }`}
-        style={{ 
-          height: 'min(540px, calc(100vh - 150px))',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)'
-        }}
-      >
+  // Desktop: Right Sidebar
+  return (
+    <div
+      className={`h-full flex-shrink-0 ${
+        isInitialMount.current ? '' : 'transition-all duration-300 ease-in-out'
+      } ${isOpen ? 'rounded-xl' : ''}`}
+      style={{
+        width: isOpen ? 'calc(30% - 0.125rem)' : '0%',
+        backgroundColor: '#1a1a1a',
+        borderLeft: isOpen ? '1px solid #2d2d2d' : 'none',
+        boxShadow: isOpen ? '-4px 0 12px rgba(0, 0, 0, 0.3)' : 'none',
+        overflow: isOpen ? 'hidden' : 'hidden',
+        minWidth: isOpen ? '350px' : '0px',
+        maxWidth: isOpen ? '450px' : '0px'
+      }}
+    >
+      {/* Sidebar Content */}
+      <div className={`h-full flex flex-col ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-teal-500 px-5 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <span className="text-xl">🧭</span>
+        <div 
+          className="px-4 py-3 flex items-center justify-between"
+          style={{
+            backgroundColor: '#1f1f1f',
+            borderBottom: '1px solid #2d2d2d'
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#2d2d2d' }}
+            >
+              <span className="text-lg">🧭</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm" style={{ color: '#e5e5e5' }}>Chat</h3>
+              <p className="text-xs" style={{ color: '#888888' }}>Pathfinder AI</p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-white font-bold text-lg">Pathfinder</h3>
-            <p className="text-white/80 text-xs">Catanduanes Tourism Guide</p>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-            <span className="text-white/80 text-xs">Online</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggle}
+              className="p-1.5 rounded transition-colors"
+              style={{ 
+                color: '#888888',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2d2d2d'
+                e.currentTarget.style.color = '#e5e5e5'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#888888'
+              }}
+              aria-label="Close sidebar"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
 
         {/* Messages */}
         <div 
-          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-white"
-          style={{ height: 'calc(100% - 140px)' }}
+          className="flex-1 overflow-y-auto p-4 space-y-4 sidebar-scrollbar"
+          style={{ backgroundColor: '#1a1a1a' }}
         >
           {messages.map((message) => (
             <div
@@ -173,34 +482,69 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-gradient-to-br from-primary to-teal-500 text-white rounded-br-sm'
-                    : 'bg-white text-slate-700 shadow-md border border-slate-100 rounded-bl-sm'
+                className={`max-w-[85%] rounded-lg px-3 py-2.5 ${
+                  message.role === 'user' ? 'ml-auto' : ''
                 }`}
+                style={
+                  message.role === 'user'
+                    ? {
+                        backgroundColor: '#3a3a3a',
+                        color: '#e5e5e5'
+                      }
+                    : {
+                        backgroundColor: '#252525',
+                        color: '#e5e5e5',
+                        border: '1px solid #2d2d2d'
+                      }
+                }
               >
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 
                 {/* Places */}
                 {message.places && message.places.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-slate-200/50 space-y-2">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid #2d2d2d' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#888888' }}>
                       📍 Related Places
                     </p>
                     {message.places.map((place, idx) => (
                       <button
                         key={idx}
                         onClick={() => handlePlaceClick(place)}
-                        className="w-full text-left p-2 rounded-lg bg-slate-50 hover:bg-primary/10 transition-colors flex items-center gap-2 group"
+                        className="w-full text-left p-2 rounded-lg transition-colors flex items-center gap-2 group"
+                        style={{
+                          backgroundColor: '#1f1f1f',
+                          border: '1px solid #2d2d2d'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#252525'
+                          e.currentTarget.style.borderColor = '#3a3a3a'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#1f1f1f'
+                          e.currentTarget.style.borderColor = '#2d2d2d'
+                        }}
                       >
-                        <span className="text-lg">{getPlaceIcon(place.type)}</span>
+                        <span className="text-base">{getPlaceIcon(place.type)}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-700 truncate group-hover:text-primary transition-colors">
+                          <p 
+                            className="text-sm font-medium truncate transition-colors"
+                            style={{ color: '#e5e5e5' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#e5e5e5'}
+                          >
                             {place.name}
                           </p>
-                          <p className="text-xs text-slate-400 capitalize">{place.type}</p>
+                          <p className="text-xs capitalize" style={{ color: '#888888' }}>{place.type}</p>
                         </div>
-                        <svg className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg 
+                          className="w-4 h-4 transition-colors flex-shrink-0" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                          style={{ color: '#888888' }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = '#b0b0b0'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = '#888888'}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
@@ -209,9 +553,12 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
                   </div>
                 )}
                 
-                <p className={`text-xs mt-2 ${
-                  message.role === 'user' ? 'text-white/60' : 'text-slate-400'
-                }`}>
+                <p 
+                  className="text-xs mt-1.5"
+                  style={{ 
+                    color: message.role === 'user' ? 'rgba(229, 229, 229, 0.6)' : '#888888'
+                  }}
+                >
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -221,14 +568,21 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white text-slate-700 shadow-md border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3">
+              <div 
+                className="rounded-lg px-3 py-2.5"
+                style={{
+                  backgroundColor: '#252525',
+                  color: '#e5e5e5',
+                  border: '1px solid #2d2d2d'
+                }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#888888', animationDelay: '300ms' }}></span>
                   </div>
-                  <span className="text-sm text-slate-500">Pathfinder is thinking...</span>
+                  <span className="text-sm" style={{ color: '#888888' }}>Pathfinder is thinking...</span>
                 </div>
               </div>
             </div>
@@ -238,37 +592,85 @@ export default function ChatBubble({ onPlaceSelect }: ChatBubbleProps) {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-slate-100">
-          <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-4 py-2">
+        <form 
+          onSubmit={handleSubmit} 
+          className="p-3"
+          style={{
+            backgroundColor: '#1f1f1f',
+            borderTop: '1px solid #2d2d2d'
+          }}
+        >
+          <div 
+            className="flex items-center gap-2 rounded-lg px-3 py-2"
+            style={{
+              backgroundColor: '#252525',
+              border: '1px solid #2d2d2d'
+            }}
+          >
+            <button
+              type="button"
+              className="p-1 rounded transition-colors"
+              style={{ color: '#888888' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2d2d2d'
+                e.currentTarget.style.color = '#e5e5e5'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#888888'
+              }}
+              aria-label="Attach"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about Catanduanes..."
-              className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder:text-slate-400"
+              className="flex-1 bg-transparent outline-none text-sm"
+              style={{
+                color: '#e5e5e5'
+              }}
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              className="p-1.5 rounded transition-colors"
+              style={
                 input.trim() && !isLoading
-                  ? 'bg-gradient-to-br from-primary to-teal-500 text-white shadow-md hover:shadow-lg transform hover:scale-105'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
+                  ? {
+                      backgroundColor: '#3a3a3a',
+                      color: '#e5e5e5'
+                    }
+                  : {
+                      color: '#555555',
+                      cursor: 'not-allowed'
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (input.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#444444'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (input.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#3a3a3a'
+                }
+              }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </button>
           </div>
-          <p className="text-center text-xs text-slate-400 mt-2">
-            Powered by Pathfinder AI
-          </p>
         </form>
       </div>
-    </>
+    </div>
   )
 }
 

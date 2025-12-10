@@ -83,6 +83,11 @@ html, body {
   cursor: pointer !important;
 }
 
+/* Hide attribution */
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}
+
 .maplibregl-ctrl-group {
   pointer-events: none !important;
   z-index: 1000 !important;
