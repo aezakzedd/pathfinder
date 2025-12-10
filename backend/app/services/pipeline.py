@@ -308,6 +308,7 @@ class Pipeline:
     def search_multi_topic(self, topics: list[str], translated_query: str, results_per_topic: int = 1) -> list[str]:
         """Search vector store for multiple topics."""
         all_results = []
+        seen_texts = set()  # Track seen texts to prevent duplicates
         n_results = self.config['rag']['search_results']
 
         for topic in topics:
@@ -325,11 +326,16 @@ class Pipeline:
                 logger.debug(f"Result {i+1} for '{topic}': confidence={confidence:.3f}")
 
                 if confidence <= self.config['rag']['multi_topic_threshold']:
-                    topic_results.append({
-                        'text': metadata.get('summary_offline', metadata['answer']),
-                        'confidence': confidence,
-                        'topic': topic
-                    })
+                    text = metadata.get('summary_offline', metadata['answer'])
+                    text_normalized = text.strip().lower()
+                    # Only add if we haven't seen this text before
+                    if text_normalized not in seen_texts:
+                        topic_results.append({
+                            'text': text,
+                            'confidence': confidence,
+                            'topic': topic
+                        })
+                        seen_texts.add(text_normalized)
 
             topic_results.sort(key=lambda x: x['confidence'])
             selected = topic_results[:results_per_topic]
@@ -347,11 +353,17 @@ class Pipeline:
             return "I don't have information about that. Ask about beaches, food, or activities!"
         
         good_answers = []
+        seen_answers = set()  # Track seen answers to prevent duplicates
         for i, metadata in enumerate(results['metadatas'][0]):
             confidence = results['distances'][0][i]
             if confidence <= self.config['rag']['confidence_threshold']:
-                good_answers.append(metadata['answer'])
-                logger.debug(f"Match {i+1} confidence: {confidence:.3f}")
+                answer = metadata['answer']
+                # Normalize answer for comparison (strip whitespace, lower for comparison)
+                answer_normalized = answer.strip().lower()
+                if answer_normalized not in seen_answers:
+                    good_answers.append(answer)
+                    seen_answers.add(answer_normalized)
+                    logger.debug(f"Match {i+1} confidence: {confidence:.3f}")
         
         if not good_answers:
             return "I'm not sure about that. Can you rephrase or ask about Catanduanes tourism?"
@@ -370,7 +382,12 @@ class Pipeline:
                 logger.debug(f"Facts being sent to Gemini: {fact}")
                 
                 response = self.gemini.generate_content(prompt)
-                return response.text
+                response_text = response.text
+                
+                # Remove duplicate sentences from Gemini response
+                response_text = self._deduplicate_sentences(response_text)
+                
+                return response_text
                 
             except Exception as e:
                 logger.debug(f"Gemini error: {e}")
@@ -380,7 +397,35 @@ class Pipeline:
             return off_msg.format(fact=fact)
         
         backup = self.config['offline']['backup']
-        return backup.format(fact=fact)
+        response_text = backup.format(fact=fact)
+        # Also deduplicate offline responses
+        response_text = self._deduplicate_sentences(response_text)
+        return response_text
+    
+    def _deduplicate_sentences(self, text: str) -> str:
+        """Remove duplicate sentences from text."""
+        # Split by common sentence endings, preserving the endings
+        sentences = re.split(r'([.!?]+)', text)
+        
+        # Recombine sentences with their punctuation
+        combined = []
+        for i in range(0, len(sentences) - 1, 2):
+            if i + 1 < len(sentences):
+                combined.append(sentences[i] + sentences[i + 1])
+            else:
+                combined.append(sentences[i])
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_sentences = []
+        for sentence in combined:
+            sentence_normalized = sentence.strip().lower()
+            if sentence_normalized and sentence_normalized not in seen:
+                unique_sentences.append(sentence)
+                seen.add(sentence_normalized)
+        
+        # Join sentences with space
+        return ' '.join(unique_sentences).strip()
     
     def key_places(self, facts: str) -> list[str]:
         """Extract places from facts."""

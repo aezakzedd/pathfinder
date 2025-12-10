@@ -209,4 +209,3 @@ export function useMap3DMarkers(
     }
   }, [map, models, onMarkerClick, geoOffset, verticalOffset, createMarkerElement])
 }
-

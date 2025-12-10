@@ -254,6 +254,127 @@ The Pathfinder AI chatbot is powered by a RAG (Retrieval-Augmented Generation) p
 }
 ```
 
+## 3D Models with Three.js
+
+Pathfinder uses **Three.js** to render interactive 3D models of tourist attractions directly on the map. This creates an immersive experience where users can see detailed 3D representations of landmarks and tourist spots.
+
+### Key Features
+
+1. **3D Model Rendering**
+   - Renders GLTF/GLB 3D models on MapLibre maps
+   - Models are positioned at precise geographic coordinates
+   - Supports custom scaling, rotation, and altitude offsets
+   - Automatically adapts to terrain elevation when terrain is enabled
+
+2. **Performance Optimizations**
+   - Model caching to avoid re-downloading models
+   - Automatic retry logic with exponential backoff
+   - Efficient rendering using MapLibre's custom layer interface
+   - Performance toggle to disable 3D models on lower-end devices
+
+3. **Interactive Markers**
+   - Circular gradient markers for each 3D model location
+   - Click handlers to select and zoom to models
+   - Smooth camera animations with proper pitch and zoom
+   - Visual feedback on hover
+
+### How It Works
+
+**Architecture:**
+- **Three.js** (`v0.181.2`) provides 3D rendering capabilities
+- **GLTFLoader** loads GLTF/GLB model files from the `public/` directory
+- **MapLibre Custom Layers** integrate Three.js scenes into the map
+- Models share the map's WebGL context for optimal performance
+
+**Implementation Details:**
+- Models are loaded asynchronously with progress tracking
+- Each model creates a custom MapLibre layer with a Three.js scene
+- The renderer uses MapLibre's projection matrices for geographic accuracy
+- Models automatically adjust their position based on terrain elevation
+
+### Adding New 3D Models
+
+To add a new 3D model to the map:
+
+1. **Add the model file** to `frontend/public/` (e.g., `frontend/public/my-model/`)
+
+2. **Update the configuration** in `frontend/src/config/touristSpots.ts`:
+
+```typescript
+export const touristSpotModels: Model3DConfig[] = [
+  {
+    id: 'unique-model-id',
+    modelPath: '/my-model/model.glb',  // Path relative to public/
+    coordinates: [124.324955, 13.559159],  // [longitude, latitude]
+    altitude: 25,  // Meters above ground (or terrain)
+    rotation: [Math.PI / 2, 0, 0],  // [x, y, z] in radians
+    scale: 4.0,  // Scale factor (1.0 = original size)
+    name: "Model Display Name"
+  }
+]
+```
+
+3. **Model Configuration Options:**
+   - `id`: Unique identifier for the model
+   - `modelPath`: Relative path to GLTF/GLB file from `public/`
+   - `coordinates`: `[longitude, latitude]` in decimal degrees
+   - `altitude`: Height offset in meters (0 = ground level)
+   - `rotation`: `[x, y, z]` rotation in radians (default: `[π/2, 0, 0]`)
+   - `scale`: Scale multiplier (default: `0.3`)
+
+### Model Format Requirements
+
+- **Format**: GLTF (`.gltf`) or GLB (`.glb`) binary format
+- **Optimization**: Recommended to use compressed GLB format for smaller file sizes
+- **Origin**: Model origin should be at the base/bottom for proper terrain alignment
+- **File Size**: Keep models under 10MB for optimal loading performance
+
+### Custom Hooks
+
+**`useMap3DModels` Hook:**
+- Manages loading and displaying multiple 3D models
+- Handles visibility toggles
+- Provides loading state and error handling
+- Automatically syncs with terrain changes
+
+**`useMap3DMarkers` Hook:**
+- Creates interactive markers for each 3D model
+- Supports geographic offset for marker placement
+- Handles click events and camera animations
+
+### Example: Camera Animation
+
+When a user clicks on a marker, the map smoothly animates to the model:
+
+```typescript
+map.flyTo({
+  center: model.coordinates,
+  zoom: 17.7,  // Dynamically calculated based on model scale
+  pitch: 65,   // Tilted view to see 3D model better
+  duration: 1500,
+  essential: true
+})
+```
+
+### Troubleshooting 3D Models
+
+#### Models Not Loading
+- **Check**: Verify the model path in `touristSpots.ts` matches the file location in `public/`
+- **Check**: Ensure the model file is in GLTF/GLB format
+- **Check**: Check browser console for loading errors
+
+#### Models Appear Too Small or Large
+- **Solution**: Adjust the `scale` property in the model configuration
+- **Default**: Scale of `0.3` works well for most models
+
+#### Models Floating or Sunk Underground
+- **Solution**: Adjust the `altitude` property (positive = higher, negative = lower)
+- **Note**: Models automatically adjust for terrain elevation when terrain is enabled
+
+#### Performance Issues
+- **Solution**: Enable Performance Mode using the gear icon (disables 3D models)
+- **Optimization**: Use compressed GLB format and optimize model geometry
+
 ## Building for Production
 
 ### Frontend Build
