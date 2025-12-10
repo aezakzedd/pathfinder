@@ -1,7 +1,7 @@
 {
-  "name": "mapboard-react",
+  "name": "pathfinder",
   "version": "1.0.0",
-  "description": "React project with MapLibre GL JS and Three.js 3D models",
+  "description": "Tourist spot discovery and route planning application with MapLibre GL JS and Three.js 3D models",
   "type": "module",
   "scripts": {
     "dev": "vite",

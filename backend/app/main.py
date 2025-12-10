@@ -10,8 +10,8 @@ from app.config import settings
 import app.logging_config as logging_config
 
 app = FastAPI(
-    title='IoTinerary API',
-    description='API for IoTinerary - Tourist spot discovery and route planning',
+    title='Pathfinder API',
+    description='API for Pathfinder - Tourist spot discovery and route planning',
     version='1.0.0',
     docs_url='/api/docs',
     redoc_url='/api/redoc',

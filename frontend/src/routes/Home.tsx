@@ -66,7 +66,7 @@ export default function Home(){
             </span>
           </div>
           <h1 className="text-7xl md:text-8xl font-black mb-6 text-white leading-tight">
-            IoTinerary
+            Pathfinder
           </h1>
           <p className="text-2xl md:text-3xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed font-light">
             Explore Catanduanes with immersive 3D maps, intelligent itinerary planning, and AI-powered recommendations

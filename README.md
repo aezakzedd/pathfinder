@@ -1,6 +1,6 @@
-# MapBoard React
+# Pathfinder
 
-A React project that displays a 3D model on a map using MapLibre GL JS and Three.js.
+A tourist spot discovery and route planning application that displays 3D models on a map using MapLibre GL JS and Three.js.
 
 ## Project Structure
 
