@@ -1,0 +1,24 @@
+:root{
+  /* Catanduanes Color Palette */
+  --seafoam-blue: #3678c4;
+  --sunlit-gold: #FFC72C;
+  --forest-green: #4A7C59;
+  --coral-pink: #FF6B6B;
+  --sandy-beige: #E8D2AE;
+  
+  /* Legacy variables mapped to new palette */
+  --bg: #f7f7fb;
+  --fg: #0f172a;
+  --primary: #2CB7B4; /* Seafoam Blue */
+  --muted: #94a3b8;
+  --accent: #FF6B6B; /* Coral Pink */
+}
+/* Dark mode tokens */
+.dark {
+  --bg: #071023;
+  --fg: #e6eef6;
+  --primary: #2CB7B4; /* Seafoam Blue */
+  --muted: #94a3b8;
+  --accent: #FF6B6B; /* Coral Pink */
+}
+

@@ -1,0 +1,122 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Hide scrollbars globally - all elements */
+*, *::before, *::after {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb {
+  display: none; /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+html, body {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden !important;
+  position: fixed;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure no scrollbars on any scrollable element */
+[style*="overflow"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[style*="overflow"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Override MapLibre GL styles to remove any gaps and scrollbars */
+.maplibregl-map {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-canvas-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-canvas {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-control-container {
+  overflow: visible !important;
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+.maplibregl-ctrl {
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+.maplibregl-ctrl button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.maplibregl-ctrl-group {
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+/* Make control group background non-blocking, but buttons clickable */
+.maplibregl-ctrl-group > button {
+  pointer-events: auto !important;
+}
+
+.maplibregl-ctrl-group > .maplibregl-ctrl {
+  pointer-events: none !important;
+}
+
+.maplibregl-ctrl-group > .maplibregl-ctrl > button {
+  pointer-events: auto !important;
+}
+
+/* Ensure all nested elements in controls don't block pointer events */
+.maplibregl-ctrl-group * {
+  pointer-events: none !important;
+}
+
+.maplibregl-ctrl-group button,
+.maplibregl-ctrl-group button * {
+  pointer-events: auto !important;
+}
+
+/* Ensure map canvas is interactive */
+.maplibregl-canvas-container {
+  pointer-events: auto !important;
+}
+
+.maplibregl-canvas {
+  pointer-events: auto !important;
+}
+
