@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useMap3DModels } from '../hooks/useMap3DModels'
+import { useMap3DMarkers } from '../hooks/useMap3DMarkers'
 import { touristSpotModels } from '../config/touristSpots'
 import { isViewportInCatanduanes } from '../utils/catanduanesBounds'
 import { getMapTilerKey } from '../utils/env'
@@ -263,6 +264,11 @@ export default function Discover() {
 
   // Add all 3D models to the map using the reusable hook (only if models are enabled)
   useMap3DModels(modelsEnabled ? map : null, touristSpotModels)
+
+  // Add circular markers with gradient at independent geographic coordinates
+  // Parameters: (map, models, onClick, [metersNorth, metersEast], verticalPixelOffset)
+  // Using 0 vertical offset so marker position is independent of camera zoom/angle
+  useMap3DMarkers(map, touristSpotModels, setSelectedTouristSpot, [45, 25], 0)
 
   return (
     <div className="fixed inset-0 w-full h-full" style={{ zIndex: 0 }}>

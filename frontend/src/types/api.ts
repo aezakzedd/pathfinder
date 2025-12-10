@@ -40,9 +40,30 @@ export interface ChatRequest {
   prompt: string
 }
 
-/** AI Chat response */
-export interface ChatResponse {
-  response: string
-  timestamp?: string
+/** Place information with coordinates */
+export interface PlaceInfo {
+  name: string
+  lat: number
+  lng: number
+  type: string
 }
 
+/** AI Chat response with places */
+export interface ChatResponse {
+  reply: string
+  places: PlaceInfo[]
+}
+
+/** All places response */
+export interface AllPlacesResponse {
+  places: PlaceInfo[]
+}
+
+/** Chat message for UI */
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  places?: PlaceInfo[]
+  timestamp: Date
+}

@@ -2,6 +2,7 @@
 Pydantic schemas for AI/chat endpoints
 """
 from pydantic import BaseModel, Field, field_validator
+from typing import Optional
 
 
 class ChatRequest(BaseModel):
@@ -28,7 +29,20 @@ class ChatRequest(BaseModel):
         }
 
 
+class PlaceInfo(BaseModel):
+    """Place information with coordinates"""
+    name: str = Field(..., description="Name of the place")
+    lat: float = Field(..., description="Latitude coordinate")
+    lng: float = Field(..., description="Longitude coordinate")
+    type: str = Field(..., description="Type of place (surfing, swimming, hiking, etc.)")
+
+
 class ChatResponse(BaseModel):
     """Response model for AI chat"""
     reply: str = Field(..., description="AI-generated reply")
+    places: list[PlaceInfo] = Field(default_factory=list, description="Related places mentioned in the response")
 
+
+class AllPlacesResponse(BaseModel):
+    """Response model for all places endpoint"""
+    places: list[PlaceInfo] = Field(..., description="List of all available places")

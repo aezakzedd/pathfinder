@@ -1,3 +1,7 @@
+# Pathfinder Backend Requirements
+# Compatible with Python 3.12+ (including 3.14)
+
+# Web Framework (original pinned versions)
 fastapi==0.124.0
 uvicorn[standard]==0.38.0
 httpx==0.28.1
@@ -6,3 +10,15 @@ loguru==0.7.3
 pydantic==2.12.5
 slowapi==0.1.9
 pydantic-settings==2.6.1
+
+# AI Pipeline Dependencies
+numpy>=1.26.0
+sentence-transformers>=3.0.0
+torch>=2.0.0
+deep-translator>=1.11.0
+requests>=2.31.0
+PyYAML>=6.0.0
+better-profanity>=0.7.0
+
+# Google Generative AI (Gemini)
+google-generativeai>=0.8.0
