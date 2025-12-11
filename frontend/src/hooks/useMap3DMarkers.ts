@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Model3DConfig } from '../types/model'
-import { ANIMATION_CONFIG, MODEL_CONFIG } from '../constants/map'
+import { ANIMATION_CONFIG, MODEL_CONFIG, MAP_CONFIG } from '../constants/map'
 
 /**
  * Offset coordinates by meters (north/south and east/west)
@@ -155,8 +155,22 @@ export function useMap3DMarkers(
     models.forEach((model) => {
       const container = createMarkerElement(model.name || model.id)
 
+      // Calculate independent geographic coordinates for the marker
+      // Offset from the model's position by the specified meters
+      // Calculate this BEFORE setting up click handler so we can use it for camera centering
+      const [metersNorth, metersEast] = geoOffset
+      const markerCoordinates = offsetCoordinates(
+        model.coordinates[0],
+        model.coordinates[1],
+        metersNorth,
+        metersEast
+      )
+
       // Add click handler
-      container.addEventListener('click', () => {
+      container.addEventListener('click', (e) => {
+        // Stop event propagation to prevent map click handler from interfering
+        e.stopPropagation()
+        
         onMarkerClick(model.id)
         // Fly to model with proper camera angle to see the 3D model
         // Adjust zoom based on model scale and altitude for optimal visibility
@@ -165,26 +179,44 @@ export function useMap3DMarkers(
         const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
         const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
         const altitudeAdjustment = modelAltitude > 20 ? 0.3 : 0
-        const targetZoom = Math.max(17.5, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
+        const targetZoom = Math.max(19, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
+        
+        // Adjust pitch based on terrain state - lower pitch when terrain is off for better centering
+        const hasTerrain = map.getTerrain() !== null
+        const targetPitch = hasTerrain ? 65 : 45 // Lower pitch when terrain is off
+        
+        // Center on the marker coordinates since that's what the user clicked on
+        // This accounts for the geographic offset between marker and model
+        // Stop any existing animations first to ensure this one executes
+        map.stop()
         map.flyTo({
-          center: model.coordinates,
+          center: markerCoordinates,
           zoom: targetZoom,
-          pitch: 65, // Tilted view to see 3D model better
-          bearing: map.getBearing(), // Keep current bearing
+          pitch: targetPitch,
+          bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
           duration: 1500,
           essential: true // Animation is essential, don't skip if low performance
         })
+        
+        // After animation completes, verify and correct center if needed (especially when terrain is off)
+        map.once('moveend', () => {
+          const currentCenter = map.getCenter()
+          const expectedLng = markerCoordinates[0]
+          const expectedLat = markerCoordinates[1]
+          const lngDiff = Math.abs(currentCenter.lng - expectedLng)
+          const latDiff = Math.abs(currentCenter.lat - expectedLat)
+          
+          // If center is off by more than a small threshold, correct it
+          if (lngDiff > 0.0001 || latDiff > 0.0001) {
+            map.jumpTo({
+              center: markerCoordinates,
+              zoom: targetZoom,
+              pitch: targetPitch,
+              bearing: MAP_CONFIG.DEFAULT_BEARING
+            })
+          }
+        })
       })
-
-      // Calculate independent geographic coordinates for the marker
-      // Offset from the model's position by the specified meters
-      const [metersNorth, metersEast] = geoOffset
-      const markerCoordinates = offsetCoordinates(
-        model.coordinates[0],
-        model.coordinates[1],
-        metersNorth,
-        metersEast
-      )
 
       // Create and add marker to map with independent coordinates
       // pitchAlignment: 'viewport' (default) makes marker face camera

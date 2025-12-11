@@ -12,12 +12,15 @@ import { MAP_CONFIG, MODEL_CONFIG, ANIMATION_CONFIG, UI_CONFIG } from '../consta
 import { calculateDistanceDegrees } from '../utils/coordinates'
 import PerformanceModeToggle from '../components/PerformanceModeToggle'
 import toast from 'react-hot-toast'
+import { matchPlaceToModel } from '../utils/matchPlaceToModel'
+import type { PlaceInfo } from '../types/api'
 
 interface DiscoverProps {
   isSidebarOpen?: boolean
+  onPlaceSelectFromAI?: (handler: (place: PlaceInfo) => void) => void
 }
 
-export default function Discover({ isSidebarOpen = false }: DiscoverProps) {
+export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }: DiscoverProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
@@ -44,6 +47,76 @@ export default function Discover({ isSidebarOpen = false }: DiscoverProps) {
   const handleCloseSpotInfo = useCallback(() => {
     setSelectedTouristSpot(null)
   }, [setSelectedTouristSpot])
+  
+  // Handle place selection from AI chatbot
+  const handlePlaceFromAI = useCallback((place: PlaceInfo) => {
+    // Match place to model
+    const modelId = matchPlaceToModel(place)
+    
+    if (!modelId) {
+      // Place doesn't match any model, just log it
+      console.log('Place from AI does not match any 3D model:', place)
+      return
+    }
+    
+    // Find the model
+    const model = touristSpotModels.find(m => m.id === modelId)
+    if (!model || !map) {
+      return
+    }
+    
+    // Select the model (this will show the info card)
+    setSelectedTouristSpot(modelId)
+    
+    // Fly to the model location with proper camera angle
+    const modelScale = model.scale ?? MODEL_CONFIG.DEFAULT_SCALE
+    const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
+    const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
+    const altitudeAdjustment = modelAltitude > 20 ? 0.3 : 0
+    const targetZoom = Math.max(19, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
+    
+    // Adjust pitch based on terrain state - lower pitch when terrain is off for better centering
+    const hasTerrain = map.getTerrain() !== null
+    const targetPitch = hasTerrain ? 65 : 45 // Lower pitch when terrain is off
+    
+    // Always center to model coordinates with fixed bearing and pitch
+    // Stop any existing animations first to ensure this one executes
+    map.stop()
+    map.flyTo({
+      center: model.coordinates,
+      zoom: targetZoom,
+      pitch: targetPitch,
+      bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
+      duration: 1500,
+      essential: true // Animation is essential, don't skip if low performance
+    })
+    
+    // After animation completes, verify and correct center if needed (especially when terrain is off)
+    map.once('moveend', () => {
+      const currentCenter = map.getCenter()
+      const expectedLng = model.coordinates[0]
+      const expectedLat = model.coordinates[1]
+      const lngDiff = Math.abs(currentCenter.lng - expectedLng)
+      const latDiff = Math.abs(currentCenter.lat - expectedLat)
+      
+      // If center is off by more than a small threshold, correct it
+      if (lngDiff > 0.0001 || latDiff > 0.0001) {
+        map.jumpTo({
+          center: model.coordinates,
+          zoom: targetZoom,
+          pitch: targetPitch,
+          bearing: MAP_CONFIG.DEFAULT_BEARING
+        })
+      }
+    })
+  }, [map, setSelectedTouristSpot])
+  
+  // Expose the handler to parent component
+  useEffect(() => {
+    if (onPlaceSelectFromAI) {
+      onPlaceSelectFromAI(handlePlaceFromAI)
+    }
+  }, [onPlaceSelectFromAI, handlePlaceFromAI])
   
 
   // Initialize the map
@@ -143,14 +216,42 @@ export default function Discover({ isSidebarOpen = false }: DiscoverProps) {
               const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
               const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
               const altitudeAdjustment = modelAltitude > 20 ? 0.3 : 0
-              const targetZoom = Math.max(17.5, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
+              const targetZoom = Math.max(19, ANIMATION_CONFIG.DEFAULT_ZOOM_ON_SELECT - scaleAdjustment - altitudeAdjustment)
+              
+              // Adjust pitch based on terrain state - lower pitch when terrain is off for better centering
+              const hasTerrain = mapInstance.getTerrain() !== null
+              const targetPitch = hasTerrain ? 65 : 45 // Lower pitch when terrain is off
+              
+              // Always center to model coordinates with fixed bearing and pitch
+              // Stop any existing animations first to ensure this one executes
+              mapInstance.stop()
               mapInstance.flyTo({
                 center: model.coordinates,
                 zoom: targetZoom,
-                pitch: 65, // Tilted view to see 3D model better
-                bearing: mapInstance.getBearing(), // Keep current bearing
+                pitch: targetPitch,
+                bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
                 duration: 1500,
                 essential: true // Animation is essential, don't skip if low performance
+              })
+              
+              // After animation completes, verify and correct center if needed (especially when terrain is off)
+              mapInstance.once('moveend', () => {
+                if (!mapInstance) return
+                const currentCenter = mapInstance.getCenter()
+                const expectedLng = model.coordinates[0]
+                const expectedLat = model.coordinates[1]
+                const lngDiff = Math.abs(currentCenter.lng - expectedLng)
+                const latDiff = Math.abs(currentCenter.lat - expectedLat)
+                
+                // If center is off by more than a small threshold, correct it
+                if (lngDiff > 0.0001 || latDiff > 0.0001) {
+                  mapInstance.jumpTo({
+                    center: model.coordinates,
+                    zoom: targetZoom,
+                    pitch: targetPitch,
+                    bearing: MAP_CONFIG.DEFAULT_BEARING
+                  })
+                }
               })
               break
             }
