@@ -68,7 +68,22 @@ export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }:
     // Select the model (this will show the info card)
     setSelectedTouristSpot(modelId)
     
-    // Fly to the model location with proper camera angle
+    // Calculate marker coordinates with the same offset as markers use
+    // This matches the marker click animation behavior
+    const geoOffset: [number, number] = [45, 25] // metersNorth, metersEast - same as useMap3DMarkers
+    const earthRadius = 6378137 // Earth's radius in meters
+    const [metersNorth, metersEast] = geoOffset
+    const [modelLng, modelLat] = model.coordinates
+    
+    // Offset latitude (north/south)
+    const markerLat = modelLat + (metersNorth / earthRadius) * (180 / Math.PI)
+    // Offset longitude (east/west) - adjusted for latitude
+    const markerLng = modelLng + (metersEast / (earthRadius * Math.cos((modelLat * Math.PI) / 180))) * (180 / Math.PI)
+    const markerCoordinates: [number, number] = [markerLng, markerLat]
+    
+    // Fly to model with proper camera angle to see the 3D model
+    // Adjust zoom based on model scale and altitude for optimal visibility
+    // Larger scale/altitude = lower zoom to fit the model in view
     const modelScale = model.scale ?? MODEL_CONFIG.DEFAULT_SCALE
     const modelAltitude = model.altitude ?? MODEL_CONFIG.DEFAULT_ALTITUDE
     const scaleAdjustment = modelScale > 2 ? 1.0 : 0.5
@@ -79,35 +94,15 @@ export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }:
     const hasTerrain = map.getTerrain() !== null
     const targetPitch = hasTerrain ? 65 : 45 // Lower pitch when terrain is off
     
-    // Always center to model coordinates with fixed bearing and pitch
-    // Stop any existing animations first to ensure this one executes
-    map.stop()
+    // Center on the marker coordinates since that's where the marker would be shown
+    // This accounts for the geographic offset between marker and model
     map.flyTo({
-      center: model.coordinates,
+      center: markerCoordinates,
       zoom: targetZoom,
       pitch: targetPitch,
-      bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
-      duration: 1500,
-      essential: true // Animation is essential, don't skip if low performance
-    })
-    
-    // After animation completes, verify and correct center if needed (especially when terrain is off)
-    map.once('moveend', () => {
-      const currentCenter = map.getCenter()
-      const expectedLng = model.coordinates[0]
-      const expectedLat = model.coordinates[1]
-      const lngDiff = Math.abs(currentCenter.lng - expectedLng)
-      const latDiff = Math.abs(currentCenter.lat - expectedLat)
-      
-      // If center is off by more than a small threshold, correct it
-      if (lngDiff > 0.0001 || latDiff > 0.0001) {
-        map.jumpTo({
-          center: model.coordinates,
-          zoom: targetZoom,
-          pitch: targetPitch,
-          bearing: MAP_CONFIG.DEFAULT_BEARING
-        })
-      }
+      bearing: MAP_CONFIG.DEFAULT_BEARING,
+      duration: ANIMATION_CONFIG.FLY_TO_DURATION,
+      essential: true
     })
   }, [map, setSelectedTouristSpot])
   
@@ -223,35 +218,13 @@ export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }:
               const targetPitch = hasTerrain ? 65 : 45 // Lower pitch when terrain is off
               
               // Always center to model coordinates with fixed bearing and pitch
-              // Stop any existing animations first to ensure this one executes
-              mapInstance.stop()
               mapInstance.flyTo({
                 center: model.coordinates,
                 zoom: targetZoom,
                 pitch: targetPitch,
-                bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
-                duration: 1500,
-                essential: true // Animation is essential, don't skip if low performance
-              })
-              
-              // After animation completes, verify and correct center if needed (especially when terrain is off)
-              mapInstance.once('moveend', () => {
-                if (!mapInstance) return
-                const currentCenter = mapInstance.getCenter()
-                const expectedLng = model.coordinates[0]
-                const expectedLat = model.coordinates[1]
-                const lngDiff = Math.abs(currentCenter.lng - expectedLng)
-                const latDiff = Math.abs(currentCenter.lat - expectedLat)
-                
-                // If center is off by more than a small threshold, correct it
-                if (lngDiff > 0.0001 || latDiff > 0.0001) {
-                  mapInstance.jumpTo({
-                    center: model.coordinates,
-                    zoom: targetZoom,
-                    pitch: targetPitch,
-                    bearing: MAP_CONFIG.DEFAULT_BEARING
-                  })
-                }
+                bearing: MAP_CONFIG.DEFAULT_BEARING,
+                duration: ANIMATION_CONFIG.FLY_TO_DURATION,
+                essential: true
               })
               break
             }
@@ -279,6 +252,171 @@ export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }:
             maxzoom: 14
           })
         }
+
+        // Load province GeoJSON and add white border outlines
+        fetch('/CATANDUANES.geojson')
+          .then(response => response.json())
+          .then((provinceGeoJson) => {
+            if (!mapInstance) return
+
+            // Merge Caramoran and Palumbanes Island into a single feature
+            // Find all Caramoran features (GEOCODE: "052004000")
+            const caramoranFeatures: any[] = []
+            const otherFeatures: any[] = []
+            
+            provinceGeoJson.features.forEach((feature: any) => {
+              if (feature.properties && feature.properties.GEOCODE === '052004000') {
+                caramoranFeatures.push(feature)
+              } else {
+                otherFeatures.push(feature)
+              }
+            })
+
+            // Combine all Caramoran polygons into a MultiPolygon
+            let mergedCaramoran: any = null
+            if (caramoranFeatures.length > 0) {
+              const polygons: number[][][] = []
+              caramoranFeatures.forEach((feature: any) => {
+                if (feature.geometry.type === 'Polygon') {
+                  polygons.push(feature.geometry.coordinates[0])
+                } else if (feature.geometry.type === 'MultiPolygon') {
+                  feature.geometry.coordinates.forEach((polygon: number[][][]) => {
+                    polygons.push(polygon[0])
+                  })
+                }
+              })
+
+              // Create merged feature with first feature's properties
+              mergedCaramoran = {
+                type: 'Feature',
+                properties: caramoranFeatures[0].properties,
+                geometry: {
+                  type: 'MultiPolygon',
+                  coordinates: polygons.map(poly => [poly])
+                }
+              }
+            }
+
+            // Create new feature collection with merged Caramoran
+            const processedGeoJson: GeoJSON.FeatureCollection = {
+              type: 'FeatureCollection',
+              features: mergedCaramoran 
+                ? [mergedCaramoran, ...otherFeatures]
+                : otherFeatures
+            }
+
+            // Add the province boundaries source
+            if (!mapInstance.getSource('provinceBoundaries')) {
+              mapInstance.addSource('provinceBoundaries', {
+                type: 'geojson',
+                data: processedGeoJson
+              })
+            } else {
+              // Update existing source
+              const source = mapInstance.getSource('provinceBoundaries')
+              if (source && source.type === 'geojson') {
+                (source as maplibregl.GeoJSONSource).setData(processedGeoJson)
+              }
+            }
+
+            // Get layer insertion point
+            const layers = mapInstance.getStyle().layers
+            const firstSymbolLayerId = layers?.find(layer => layer.type === 'symbol')?.id
+
+            // Add invisible fill layer for hover detection
+            if (!mapInstance.getLayer('provinceHoverLayer')) {
+              mapInstance.addLayer({
+                id: 'provinceHoverLayer',
+                type: 'fill',
+                source: 'provinceBoundaries',
+                paint: {
+                  'fill-color': 'transparent',
+                  'fill-opacity': 0
+                }
+              }, firstSymbolLayerId)
+            }
+
+            // Add the province borders layer (white outlines) - invisible by default
+            if (!mapInstance.getLayer('provinceBordersLayer')) {
+              mapInstance.addLayer({
+                id: 'provinceBordersLayer',
+                type: 'line',
+                source: 'provinceBoundaries',
+                paint: {
+                  'line-color': '#ffffff',
+                  'line-width': 2,
+                  'line-opacity': 0 // Invisible by default, will be shown on hover
+                },
+                filter: ['==', 'GEOCODE', ''] // Filter to show nothing by default
+              }, firstSymbolLayerId) // Insert before first symbol layer if it exists
+            }
+
+            // Track currently hovered municipality (using GEOCODE for consistency)
+            let hoveredMunicipalityGeocode: string | null = null
+
+            // Handle mouse move to detect municipality hover
+            const handleMouseMove = (e: maplibregl.MapMouseEvent) => {
+              if (!mapInstance) return
+
+              const features = mapInstance.queryRenderedFeatures(e.point, {
+                layers: ['provinceHoverLayer']
+              })
+
+              // Get the first feature (municipality) under the cursor
+              const hoveredFeature = features[0]
+              
+              if (hoveredFeature && hoveredFeature.properties) {
+                // Use GEOCODE for filtering (more reliable for merged features)
+                const municipalityGeocode = hoveredFeature.properties.GEOCODE || hoveredFeature.properties.OBJECTID?.toString()
+                
+                // Only update if hovering a different municipality
+                if (hoveredMunicipalityGeocode !== municipalityGeocode) {
+                  hoveredMunicipalityGeocode = municipalityGeocode
+                  
+                  // Update filter to show only the hovered municipality
+                  // Use GEOCODE if available, otherwise fall back to OBJECTID
+                  if (hoveredFeature.properties.GEOCODE) {
+                    mapInstance.setFilter('provinceBordersLayer', ['==', 'GEOCODE', municipalityGeocode])
+                  } else {
+                    mapInstance.setFilter('provinceBordersLayer', ['==', 'OBJECTID', hoveredFeature.properties.OBJECTID])
+                  }
+                  mapInstance.setPaintProperty('provinceBordersLayer', 'line-opacity', 1)
+                  
+                  // Change cursor to pointer
+                  mapInstance.getCanvas().style.cursor = 'pointer'
+                }
+              } else {
+                // No municipality under cursor
+                if (hoveredMunicipalityGeocode !== null) {
+                  hoveredMunicipalityGeocode = null
+                  
+                  // Hide borders
+                  mapInstance.setFilter('provinceBordersLayer', ['==', 'GEOCODE', ''])
+                  mapInstance.setPaintProperty('provinceBordersLayer', 'line-opacity', 0)
+                  
+                  // Reset cursor
+                  mapInstance.getCanvas().style.cursor = ''
+                }
+              }
+            }
+
+            // Handle mouse leave to hide borders
+            const handleMouseLeave = () => {
+              if (!mapInstance) return
+              
+              hoveredMunicipalityGeocode = null
+              mapInstance.setFilter('provinceBordersLayer', ['==', 'GEOCODE', ''])
+              mapInstance.setPaintProperty('provinceBordersLayer', 'line-opacity', 0)
+              mapInstance.getCanvas().style.cursor = ''
+            }
+
+            // Add event listeners
+            mapInstance.on('mousemove', 'provinceHoverLayer', handleMouseMove)
+            mapInstance.on('mouseleave', 'provinceHoverLayer', handleMouseLeave)
+          })
+          .catch((error) => {
+            console.warn('Failed to load province boundaries:', error)
+          })
 
         // Enable terrain immediately if terrainEnabled is true and viewport is in Catanduanes
         // This ensures terrain appears on initial load
@@ -321,6 +459,15 @@ export default function Discover({ isSidebarOpen = false, onPlaceSelectFromAI }:
         loadingTimeout = null
       }
       if (mapInstance) {
+        // Remove hover event listeners if layers exist
+        try {
+          if (mapInstance.getLayer('provinceHoverLayer')) {
+            // Remove all event listeners for this layer by removing and re-adding would be complex
+            // Instead, we'll just let map.remove() handle cleanup
+          }
+        } catch (e) {
+          // Layers might not exist, ignore
+        }
         mapInstance.remove()
         mapRef.current = null
         setMap(null)

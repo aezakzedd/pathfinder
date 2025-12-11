@@ -406,6 +406,36 @@
     "place_name": "Bato Church"
   },
   {
+    "input": "Tell me about Bote Lighthouse",
+    "output": "Bote Lighthouse is a historic lighthouse located in Catanduanes. It serves as a navigational aid and offers scenic views of the surrounding coastline.",
+    "title": "Bote Lighthouse Overview",
+    "topic": "Sightseeing",
+    "location": "Catanduanes",
+    "summary_offline": "Bote Lighthouse is a historic lighthouse in Catanduanes that serves as a navigational aid and offers scenic coastal views.",
+    "coordinates": {"lat": 13.559159840888644, "lng": 124.32495514015112},
+    "place_name": "Bote Lighthouse"
+  },
+  {
+    "input": "What is Bote Lighthouse?",
+    "output": "Bote Lighthouse is a historic lighthouse in Catanduanes that helps guide ships and boats along the coast. It's a popular tourist spot for its panoramic views.",
+    "title": "Bote Lighthouse Description",
+    "topic": "Sightseeing",
+    "location": "Catanduanes",
+    "summary_offline": "Bote Lighthouse is a historic navigational lighthouse in Catanduanes, popular for its panoramic coastal views.",
+    "coordinates": {"lat": 13.559159840888644, "lng": 124.32495514015112},
+    "place_name": "Bote Lighthouse"
+  },
+  {
+    "input": "Where is Bote Lighthouse located?",
+    "output": "Bote Lighthouse is located in Catanduanes, Philippines, providing navigational assistance along the island's coastline.",
+    "title": "Bote Lighthouse Location",
+    "topic": "Sightseeing",
+    "location": "Catanduanes",
+    "summary_offline": "Bote Lighthouse is located in Catanduanes, Philippines.",
+    "coordinates": {"lat": 13.559159840888644, "lng": 124.32495514015112},
+    "place_name": "Bote Lighthouse"
+  },
+  {
     "input": "Where is Twin Rock Beach Resort?",
     "output": "Twin Rock Beach Resort is located in Igang, Virac, Catanduanes.",
     "title": "Twin Rock Resort Location",

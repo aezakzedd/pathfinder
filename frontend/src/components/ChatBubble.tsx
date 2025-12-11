@@ -70,6 +70,19 @@ export default function ChatBubble({ onPlaceSelect, isOpen, onToggle, isMobile =
       }
 
       setMessages(prev => [...prev, assistantMessage])
+      
+      // Automatically trigger place selection if AI returns places
+      // This will fly to the model and show the info card
+      if (response.places && response.places.length > 0 && onPlaceSelect) {
+        // Use a small delay to ensure the message is rendered first
+        setTimeout(() => {
+          // Select the first place that matches a model
+          for (const place of response.places) {
+            onPlaceSelect(place)
+            break // Only select the first matching place
+          }
+        }, 500)
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
       const isTimeout = errorMsg.toLowerCase().includes('timeout')

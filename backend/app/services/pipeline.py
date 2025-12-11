@@ -343,6 +343,30 @@ class Pipeline:
 
         return [r['text'] for r in all_results]
     
+    def _are_answers_similar(self, answer1: str, answer2: str, threshold: float = 0.85) -> bool:
+        """
+        Check if two answers are semantically similar using word overlap.
+        Returns True if they are similar enough to be considered duplicates.
+        """
+        # Normalize both answers
+        words1 = set(answer1.lower().strip().split())
+        words2 = set(answer2.lower().strip().split())
+        
+        # Remove common stop words for better comparison
+        stop_words = {'is', 'a', 'an', 'the', 'in', 'at', 'on', 'for', 'to', 'of', 'and', 'or', 'but', 'it', 'its'}
+        words1 = words1 - stop_words
+        words2 = words2 - stop_words
+        
+        if not words1 or not words2:
+            return False
+        
+        # Calculate Jaccard similarity (intersection over union)
+        intersection = len(words1 & words2)
+        union = len(words1 | words2)
+        similarity = intersection / union if union > 0 else 0
+        
+        return similarity >= threshold
+    
     def search(self, question: str) -> str:
         """Search for single question."""
         logger.debug(f"Searching for: '{question}'")
@@ -353,20 +377,40 @@ class Pipeline:
             return "I don't have information about that. Ask about beaches, food, or activities!"
         
         good_answers = []
-        seen_answers = set()  # Track seen answers to prevent duplicates
+        seen_answers = set()  # Track seen answers to prevent exact duplicates
+        
         for i, metadata in enumerate(results['metadatas'][0]):
             confidence = results['distances'][0][i]
             if confidence <= self.config['rag']['confidence_threshold']:
                 answer = metadata['answer']
-                # Normalize answer for comparison (strip whitespace, lower for comparison)
+                # Normalize answer for exact comparison (strip whitespace, lower)
                 answer_normalized = answer.strip().lower()
-                if answer_normalized not in seen_answers:
+                
+                # Check for exact duplicate
+                if answer_normalized in seen_answers:
+                    continue
+                
+                # Check for semantic similarity with existing answers
+                is_similar = False
+                for existing_answer in good_answers:
+                    if self._are_answers_similar(answer, existing_answer):
+                        is_similar = True
+                        logger.debug(f"Skipping similar answer (similarity detected)")
+                        break
+                
+                if not is_similar:
                     good_answers.append(answer)
                     seen_answers.add(answer_normalized)
                     logger.debug(f"Match {i+1} confidence: {confidence:.3f}")
         
         if not good_answers:
             return "I'm not sure about that. Can you rephrase or ask about Catanduanes tourism?"
+        
+        # If we have multiple answers, prefer the first (most relevant) one
+        # Or combine them intelligently
+        if len(good_answers) > 1:
+            # Return only the first (most relevant) answer to avoid repetition
+            return good_answers[0]
         
         return " ".join(good_answers)
 
@@ -428,16 +472,22 @@ class Pipeline:
         return ' '.join(unique_sentences).strip()
     
     def key_places(self, facts: str) -> list[str]:
-        """Extract places from facts."""
+        """Extract places from facts using word boundary matching."""
         places = self.config.get('places', {})
         found_places = []
         facts_lower = facts.lower()
         
+        # Sort by length (longest first) to match "Twin Rock Beach" before "Twin Rock"
         sorted_places = sorted(places, key=len, reverse=True)
         
         for place in sorted_places:
-            if place.lower() in facts_lower and place not in found_places:
+            place_lower = place.lower()
+            # Use word boundary regex for exact word matching
+            # This prevents partial matches like "rock" matching "lighthouse"
+            pattern = r'\b' + re.escape(place_lower) + r'\b'
+            if re.search(pattern, facts_lower) and place not in found_places:
                 found_places.append(place)
+                logger.debug(f"Found place in facts: {place}")
 
         return found_places
     
@@ -520,16 +570,46 @@ class Pipeline:
         else:
             fact = self.search(convert)
 
+        # First, check if user's query directly mentions a place name
+        # This should take priority over places found in the facts
+        user_lower = user_input.lower()
+        directly_mentioned_places = []
+        all_places = list(self.config.get('places', {}).keys())
+        
+        # Sort by length (longest first) to match "Twin Rock Beach" before "Twin Rock"
+        sorted_places = sorted(all_places, key=len, reverse=True)
+        
+        for place_name in sorted_places:
+            place_lower = place_name.lower()
+            # Check if place is directly mentioned in user query
+            # Use word boundaries for better matching (e.g., "bote lighthouse" should match "Bote Lighthouse")
+            # Escape special regex characters and use word boundaries
+            pattern = r'\b' + re.escape(place_lower) + r'\b'
+            if re.search(pattern, user_lower):
+                directly_mentioned_places.append(place_name)
+                logger.debug(f"Place directly mentioned in query: {place_name}")
+        
         # Extract places from the retrieved fact
-        place_names = self.key_places(fact)
+        place_names_from_fact = self.key_places(fact)
+        
+        # Prioritize places mentioned in user query
+        if directly_mentioned_places:
+            # Use directly mentioned places, but also include fact places if they match
+            place_names = directly_mentioned_places
+            # Add fact places that weren't already included
+            for fact_place in place_names_from_fact:
+                if fact_place not in place_names:
+                    place_names.append(fact_place)
+        else:
+            # No direct mention, use places from facts
+            place_names = place_names_from_fact
         
         # Check if user is asking about places "near" a specific location
         reference_place = None
-        user_lower = user_input.lower()
         near_keywords = ['near', 'close to', 'around', 'by', 'next to']
         
         # Check if query mentions a place with "near" keywords
-        for place_name in self.config.get('places', {}).keys():
+        for place_name in all_places:
             place_lower = place_name.lower()
             # Check if place is mentioned and query has "near" keywords
             if place_lower in user_lower:

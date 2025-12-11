@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react'
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Navigation from './components/Navigation'
 import ToastContainer from './components/ToastContainer'
@@ -55,13 +55,22 @@ export default function App(){
     }
   }, [isDiscoverPage, isMobile])
 
+  // Ref to store the place selection handler from Discover component
+  const placeSelectHandlerRef = useRef<((place: PlaceInfo) => void) | null>(null)
+  
+  // Callback to receive the handler from Discover component
+  const setPlaceSelectHandler = (handler: (place: PlaceInfo) => void) => {
+    placeSelectHandlerRef.current = handler
+  }
+  
   // Handle place selection from chatbot
   const handlePlaceSelect = (place: PlaceInfo) => {
-    // Navigate to discover page with the place coordinates
-    // This will be handled by the map component
-    console.log('Selected place:', place)
-    // You can implement navigation to the place on the map here
-    // For now, we just log it
+    // If we have a handler from Discover, use it to trigger model selection and fly-to
+    if (placeSelectHandlerRef.current) {
+      placeSelectHandlerRef.current(place)
+    } else {
+      console.log('Place selected but map not ready:', place)
+    }
   }
 
   const toggleSidebar = () => {
@@ -99,7 +108,7 @@ export default function App(){
             <Suspense fallback={<div className="p-8 text-center pt-20">Loading...</div>}>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/discover" element={<Discover isSidebarOpen={isSidebarOpen} />} />
+                <Route path="/discover" element={<Discover isSidebarOpen={isSidebarOpen} onPlaceSelectFromAI={setPlaceSelectHandler} />} />
               </Routes>
             </Suspense>
           </div>

@@ -187,34 +187,13 @@ export function useMap3DMarkers(
         
         // Center on the marker coordinates since that's what the user clicked on
         // This accounts for the geographic offset between marker and model
-        // Stop any existing animations first to ensure this one executes
-        map.stop()
         map.flyTo({
           center: markerCoordinates,
           zoom: targetZoom,
           pitch: targetPitch,
-          bearing: MAP_CONFIG.DEFAULT_BEARING, // Always use fixed bearing for consistent camera position
-          duration: 1500,
-          essential: true // Animation is essential, don't skip if low performance
-        })
-        
-        // After animation completes, verify and correct center if needed (especially when terrain is off)
-        map.once('moveend', () => {
-          const currentCenter = map.getCenter()
-          const expectedLng = markerCoordinates[0]
-          const expectedLat = markerCoordinates[1]
-          const lngDiff = Math.abs(currentCenter.lng - expectedLng)
-          const latDiff = Math.abs(currentCenter.lat - expectedLat)
-          
-          // If center is off by more than a small threshold, correct it
-          if (lngDiff > 0.0001 || latDiff > 0.0001) {
-            map.jumpTo({
-              center: markerCoordinates,
-              zoom: targetZoom,
-              pitch: targetPitch,
-              bearing: MAP_CONFIG.DEFAULT_BEARING
-            })
-          }
+          bearing: MAP_CONFIG.DEFAULT_BEARING,
+          duration: ANIMATION_CONFIG.FLY_TO_DURATION,
+          essential: true
         })
       })
 

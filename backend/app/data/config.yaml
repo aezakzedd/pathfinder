@@ -257,140 +257,292 @@ protected_places:
   - "Virac Town Center"
   - "Virac Public Market"
   - "Virac Airport"
+  - "Villa Andrea Inn"
+  - "Kape't Tagpuan Sa Isla"
+  - "Balongbong Falls"
+  - "Batalay Mangrove Eco Park"
+  - "Diocesan Shrine of the Holy Cross"
+  - "Poseidon Cove Beach Resort"
+  - "Little Bliss Cafe"
+  - "Sakahon Beach"
+  - "Mount Pinagkaayonan (Lantad)"
+  - "Bitaogan Beach"
+  - "Cagraray Island"
+  - "Carorian Wonders"
+  - "St. Anthony of Padua Parish Church"
+  - "St. John the Baptist  Church (BATO)"
+  - "BATO"
 
 # Places with Coordinates (for mapping)
+# Organized by Municipality
 places:
-  "Puraran Beach":
-    lat: 13.691803137745696
-    lng: 124.39882862882942
-    type: surfing
-
+  # ========== VIRAC (Capital Municipality) ==========
   "Virac Public Market": 
     lat: 13.578141390225673
     lng: 124.22879470245454 
     type: food
+    municipality: "VIRAC"
   
   "Virac Town Center": 
     lat: 13.579957995200868
     lng: 124.22855269682266
     type: food
+    municipality: "VIRAC"
 
   "Virac Airport":
     lat: 13.579601473762152
     lng: 124.21184297254652
     type: transport
-  
-  "Twin Rock Beach":
-    lat: 13.522663495166062
-    lng: 124.21269059659129
-    type: swimming
-  
-  "Binurong Point":
-    lat: 13.668995411184893
-    lng: 124.41449841008455
-    type: hiking
-  
-  "Maribina Falls":
-    lat: 13.601708685295064
-    lng: 124.2706945272802
-    type: swimming
-  
-  "Tres Karas de Kristo/Face of Jesus Beach":
-    lat: 13.518763507546256
-    lng: 124.20595165635922
-    type: sightseeing
-  
-  "Nahulugan Falls":
-    lat: 13.788640961723846
-    lng: 124.36779102542982
-    type: swimming
-  
-  "Tuwad-Tuwadan Blue Lagoon":
-    lat: 14.058643378491052
-    lng: 124.12659986379072
-    type: surfing
-  
-  "St. John the Baptist Church":
-    lat: 13.983189671887365
-    lng: 124.1342556677599
-    type: sightseeing
+    municipality: "VIRAC"
   
   "Mamangal Beach":
     lat: 13.555007904907587
     lng: 124.14923064840366
     type: swimming
+    municipality: "VIRAC"
   
-  "Ba-Haw Falls":
-    lat: 13.753822522766649
-    lng: 124.3833036871097
+  "Twin Rock Beach":
+    lat: 13.522663495166062
+    lng: 124.21269059659129
     type: swimming
+    municipality: "VIRAC"
   
-  "ARDCI Corporate Inn":
-    lat: 13.5812552
-    lng: 124.2301155
-    type: accommodation
-  
-  "Rhaj Inn":
-    lat: 13.5791058
-    lng: 124.2262818
-    type: accommodation
-  
-  "Majestic Puraran Beach Resort":
-    lat: 13.6887766
-    lng: 124.3968770
-    type: accommodation
-  
-  "Pacific Surfers Paradise Resort":
-    lat: 13.6893856
-    lng: 124.3952103
-    type: accommodation
+  "Tres Karas de Kristo/Face of Jesus Beach":
+    lat: 13.518763507546256
+    lng: 124.20595165635922
+    type: sightseeing
+    municipality: "VIRAC"
   
   "Catanduanes Midtown Inn Resort":
     lat: 13.5403305
     lng: 124.1638091
     type: accommodation
+    municipality: "VIRAC"
+  
+  "ARDCI Corporate Inn":
+    lat: 13.5812552
+    lng: 124.2301155
+    type: accommodation
+    municipality: "VIRAC"
+  
+  "Rhaj Inn":
+    lat: 13.5791058
+    lng: 124.2262818
+    type: accommodation
+    municipality: "VIRAC"
   
   "Nitto Lodge":
     lat: 13.5833005
     lng: 124.2054489
     type: accommodation
+    municipality: "VIRAC"
   
   "Renel's Traveller's Inn":
     lat: 13.5795156
     lng: 124.2280368
     type: accommodation
-  
-  "Bagamanoc Guest House":
-    lat: 13.9415567
-    lng: 124.2869733
-    type: accommodation
-  
-  "Pusgo Island Guest House":
-    lat: 13.9699644
-    lng: 124.3236576
-    type: accommodation
+    municipality: "VIRAC"
   
   "Sonia's Island Stay":
     lat: 13.58502856977906
     lng: 124.23876468266461
     type: accommodation
+    municipality: "VIRAC"
   
   "The Lumber":
     lat: 13.592217696981342
     lng: 124.24844932275295
     type: accommodation
+    municipality: "VIRAC"
   
   "Ecrown Hotel and Resort":
     lat: 13.593886227522459
     lng: 124.25617408469465
     type: accommodation
+    municipality: "VIRAC"
+  
+  # ========== BATO Municipality ==========
+  "Bote Lighthouse":
+    lat: 13.559159840888644
+    lng: 124.32495514015112
+    type: sightseeing
+    municipality: "BATO"
+  
+  "Maribina Falls":
+    lat: 13.601708685295064
+    lng: 124.2706945272802
+    type: swimming
+    municipality: "BATO"
+  
+  "Villa Andrea Inn":
+    lat: 13.626112095688503
+    lng: 124.33393918775872
+    type: accommodation
+    municipality: "BATO"
+    description: "A hotels & resorts destination in BATO, Catanduanes"
+  
+  "Kape't Tagpuan Sa Isla":
+    lat: 13.607682886467666
+    lng: 124.29981496225444
+    type: food
+    municipality: "BATO"
+    description: "A restaurants & cafes destination in BATO, Catanduanes"
+  
+  "Balongbong Falls":
+    lat: 13.621558812195497
+    lng: 124.29485801735287
+    type: swimming
+    municipality: "BATO"
+    description: "A falls destination in BATO, Catanduanes"
+  
+  "Batalay Mangrove Eco Park":
+    lat: 13.59293699334864
+    lng: 124.30880035575444
+    type: sightseeing
+    municipality: "BATO"
+    description: "A viewpoints destination in BATO, Catanduanes"
+  
+  "Diocesan Shrine of the Holy Cross":
+    lat: 13.588667855225093
+    lng: 124.31519015172765
+    type: sightseeing
+    municipality: "BATO"
+    description: "A religious sites destination in BATO, Catanduanes"
+  
+  "Poseidon Cove Beach Resort":
+    lat: 13.563919705786883
+    lng: 124.33224886190959
+    type: accommodation
+    municipality: "BATO"
+    description: "A hotels & resorts destination in BATO, Catanduanes"
+  
+  "Little Bliss Cafe":
+    lat: 13.607170580187129
+    lng: 124.29861953643294
+    type: food
+    municipality: "BATO"
+    description: "A restaurants & cafes destination in BATO, Catanduanes"
+  
+  "Sakahon Beach":
+    lat: 13.561646057470904
+    lng: 124.32951300039434
+    type: accommodation
+    municipality: "BATO"
+    description: "A hotels & resorts destination in BATO, Catanduanes"
+  
+  "Mount Pinagkaayonan (Lantad)":
+    lat: 13.606679398378262
+    lng: 124.27824218655604
+    type: hiking
+    municipality: "BATO"
+    description: "A viewpoints destination in BATO, Catanduanes"
+  
+  "Bitaogan Beach":
+    lat: 13.55833527320848
+    lng: 124.31850376558778
+    type: accommodation
+    municipality: "BATO"
+    description: "A hotels & resorts destination in BATO, Catanduanes"
+  
+  "Cagraray Island":
+    lat: 13.61714945492485
+    lng: 124.3494816783378
+    type: sightseeing
+    municipality: "BATO"
+    description: "A viewpoints destination in BATO, Catanduanes"
+  
+  "Carorian Wonders":
+    lat: 13.58025643862461
+    lng: 124.34231555615987
+    type: accommodation
+    municipality: "BATO"
+    description: "A hotels & resorts destination in BATO, Catanduanes"
+  
+  "St. Anthony of Padua Parish Church":
+    lat: 13.596889143817018
+    lng: 124.28389014002626
+    type: sightseeing
+    municipality: "BATO"
+    description: "A religious sites destination in BATO, Catanduanes"
+  
+  "St. John the Baptist  Church (BATO)":
+    lat: 13.610732662974675
+    lng: 124.29703491581695
+    type: sightseeing
+    municipality: "BATO"
+    description: "A religious sites destination in BATO, Catanduanes"
+  
+  # ========== BARAS Municipality ==========
+  "Puraran Beach":
+    lat: 13.691803137745696
+    lng: 124.39882862882942
+    type: surfing
+    municipality: "BARAS"
+  
+  "Binurong Point":
+    lat: 13.668995411184893
+    lng: 124.41449841008455
+    type: hiking
+    municipality: "BARAS"
+  
+  "Majestic Puraran Beach Resort":
+    lat: 13.6887766
+    lng: 124.3968770
+    type: accommodation
+    municipality: "BARAS"
+  
+  "Pacific Surfers Paradise Resort":
+    lat: 13.6893856
+    lng: 124.3952103
+    type: accommodation
+    municipality: "BARAS"
+  
+  # ========== BAGAMANOC Municipality ==========
+  "Bagamanoc Guest House":
+    lat: 13.9415567
+    lng: 124.2869733
+    type: accommodation
+    municipality: "BAGAMANOC"
+  
+  "Pusgo Island Guest House":
+    lat: 13.9699644
+    lng: 124.3236576
+    type: accommodation
+    municipality: "BAGAMANOC"
+  
+  # ========== GIGMOTO Municipality ==========
+  "Nahulugan Falls":
+    lat: 13.788640961723846
+    lng: 124.36779102542982
+    type: swimming
+    municipality: "GIGMOTO"
+  
+  "Ba-Haw Falls":
+    lat: 13.753822522766649
+    lng: 124.3833036871097
+    type: swimming
+    municipality: "GIGMOTO"
+  
+  # ========== PANDAN Municipality ==========
+  "Tuwad-Tuwadan Blue Lagoon":
+    lat: 14.058643378491052
+    lng: 124.12659986379072
+    type: surfing
+    municipality: "PANDAN"
+  
+  # ========== SAN ANDRES Municipality ==========
+  "St. John the Baptist Church":
+    lat: 13.983189671887365
+    lng: 124.1342556677599
+    type: sightseeing
+    municipality: "SAN ANDRES"
+  
+  # ========== UNKNOWN/OTHER (uncategorized) ==========
+  # If a place doesn't fit any municipality above, add it here
 
 # Map Configuration
 map:
-  default_zoom: 11
-  tile_url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  attribution: "© OpenStreetMap contributors"
-  max_zoom: 19
+
   
   # Icon mapping for different place types
   icons:
